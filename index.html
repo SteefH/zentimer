@@ -2,13 +2,19 @@
 <html>
     <head>
         <title>Zen Timer</title>
+
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+            name="apple-mobile-web-app-status-bar-style"
+            content="black-translucent"
+        />
         <meta
             name="viewport"
-            content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
+            content="viewport-fit=cover, user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
         />
         <link rel="apple-touch-icon" href="apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
+
         <style type="text/css">
             :root {
                 --bg-color: #000;
@@ -18,24 +24,18 @@
                 position: relative;
                 margin: 0;
                 padding: 0;
+                color: var(--fg-color);
+                background-color: var(--bg-color);
             }
             body {
+                font-variant-numeric: tabular-nums;
                 color: var(--fg-color);
                 background-color: var(--bg-color);
                 margin: 0;
                 padding: 0;
                 font-family:
-                    system-ui,
-                    -apple-system,
-                    BlinkMacSystemFont,
-                    "Segoe UI",
-                    Roboto,
-                    Oxygen,
-                    Ubuntu,
-                    Cantarell,
-                    "Open Sans",
-                    "Helvetica Neue",
-                    sans-serif;
+                    -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI",
+                    Roboto, Ubuntu;
                 transition-property: background-color color;
                 transition-duration: 0.35s;
                 transition-timing-function: ease-in-out;
@@ -45,13 +45,26 @@
                 --fg-color: #000;
             }
             #container {
-                height: 60vh;
+                /*height: 60vh;*/
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
                 padding: 0;
                 display: flex;
                 flex-direction: column;
+                opacity: 0;
+                transition-property: opacity background-color color;
+                transition-duration: 0.35s;
+                transition-timing-function: ease-in-out;
+            }
+            .no-cover #container {
+                opacity: 100%;
+                color: var(--fg-color);
+                background-color: var(--bg-color);
             }
             #content {
-                flex-grow: 1;
                 display: flex;
                 flex-direction: column;
                 text-align: center;
@@ -76,8 +89,10 @@
             #countdown-bar {
                 position: absolute;
                 bottom: 0;
-                left: 0;
-                height: 3px;
+                left: 50%;
+                transform: translateX(-50%);
+                height: 4px;
+                border-radius: 4px;
                 background-color: var(--fg-color);
             }
             #remaining-minutes {
@@ -89,11 +104,8 @@
 
                 font-size: 4vh;
             }
-            #remaining-minutes::before {
-                content: "nog ";
-            }
-            #remaining-minutes::after {
-                content: " minuten";
+            .ended #remaining-minutes {
+                display: none;
             }
             #controls {
                 height: 12vh;
@@ -105,7 +117,8 @@
             .running #controls {
                 display: none;
             }
-            .running #countdown {
+            .running #countdown,
+            .ended #countdown {
                 display: block;
             }
             .control {
@@ -124,12 +137,44 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                border: 1px solid var(--fg-color);
+                border: 4px solid var(--fg-color);
                 border-radius: 8px;
+            }
+            #splash {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                right: 0;
+                background: var(--bg-color);
+            }
+            #splash::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-image: url("./apple-touch-icon.png");
+                background-repeat: no-repeat;
+                background-position: 50% 25%;
+                filter: invert(100%) brightness(25%);
+                -webkit-filter: invert(100%) brightness(25%);
+            }
+            #cover {
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+            }
+            .no-cover #cover {
+                display: none;
             }
         </style>
     </head>
     <body>
+        <div id="splash"></div>
         <div id="container">
             <div id="content">
                 <span id="clock"></span>
@@ -140,8 +185,9 @@
                 <span id="remaining-minutes"></span>
             </span>
             <div id="controls">
-                <span id="do-25" class="control">25 min</span>
+                <span id="do-25" class="control">25:00</span>
             </div>
+            <div id="cover"></div>
         </div>
 
         <script>
@@ -173,9 +219,17 @@
                         },
                         remainingMinutes: () => {
                             if (endTime) {
-                                return Math.max(
-                                    Math.ceil((endTime - Date.now()) / MINUTE),
+                                const remaining = Math.max(
+                                    Math.ceil((endTime - Date.now()) / 1000),
                                     0,
+                                );
+
+                                const minutes = Math.floor(remaining / 60);
+                                const seconds = remaining % 60;
+                                return (
+                                    (minutes + "").padStart(2, "0") +
+                                    ":" +
+                                    (seconds + "").padStart(2, "0")
                                 );
                             }
                         },
@@ -218,10 +272,11 @@
 
                 document
                     .getElementById("do-25")
-                    .addEventListener("click", () => {
+                    .addEventListener("click", async () => {
                         timing.setMinutesFromNow(25);
                         countdownText.innerHTML = timing.endTimeString();
                         uiUpdate();
+                        await lockScreen();
                     });
                 document
                     .getElementById("content")
@@ -230,26 +285,13 @@
                         uiUpdate();
                     });
 
-                function toggleWakeLock() {
-                    if (!navigator.wakeLock) {
-                        alert(
-                            "Your device does not support the Wake Lock API. Try on an Android phone or on a device running iOS 16.4 or higher!",
-                        );
-                    } else if (
-                        window.currentWakeLock &&
-                        !window.currentWakeLock.released
-                    ) {
-                        releaseScreen();
-                    } else {
-                        lockScreen();
-                    }
-                }
-
                 async function lockScreen() {
                     try {
                         window.currentWakeLock =
                             await navigator.wakeLock.request();
-                    } catch (err) {}
+                    } catch (err) {
+                        alert(err);
+                    }
                 }
 
                 async function releaseScreen() {
@@ -257,10 +299,16 @@
                 }
 
                 document.addEventListener("visibilitychange", async () => {
-                    await lockScreen();
+                    if (document.visibilityState == "visible") {
+                        await lockScreen();
+                    }
                 });
-
-                await lockScreen();
+                document
+                    .getElementById("cover")
+                    .addEventListener("click", async () => {
+                        await lockScreen();
+                        document.body.classList.add("no-cover");
+                    });
             };
             addEventListener("DOMContentLoaded", run);
         </script>
