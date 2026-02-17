@@ -101,55 +101,62 @@
 
         <script src="./script/no-sleep.js"></script>
         <script>
-            const { default: NoSleepApp } = NoSleepApp;
-            const noSleep = new NoSleepApp();
-            noSleep.enable();
-            const clock = document.getElementById("clock");
-            const countdown = document.getElementById("countdown");
-            const timeString = (d) =>
-                (d || new Date()).toLocaleTimeString("nl-NL", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                });
-            const timing = (() => {
-                let endTime = null;
-                let endTimeString = null;
-                const isRunning = () => endTime && endTime > Date.now();
-                return {
-                    setMinutesFromNow: (count) => {
-                        endTime = Date.now() + count * 60000;
-                        endTimeString = timeString(new Date(endTime));
-                    },
-                    clear: () => {
-                        endTime = null;
-                        endTimeString = null;
-                    },
-                    isRunning,
-                    hasEnded: () => endTime && endTime < Date.now(),
-                    endTimeString: () => (isRunning() ? endTimeString : ""),
+            const run = () => {
+                const { default: NoSleepApp } = NoSleepApp;
+                const noSleep = new NoSleepApp();
+                noSleep.enable();
+                const clock = document.getElementById("clock");
+                const countdown = document.getElementById("countdown");
+                const timeString = (d) =>
+                    (d || new Date()).toLocaleTimeString("nl-NL", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    });
+                const timing = (() => {
+                    let endTime = null;
+                    let endTimeString = null;
+                    const isRunning = () => endTime && endTime > Date.now();
+                    return {
+                        setMinutesFromNow: (count) => {
+                            endTime = Date.now() + count * 60000;
+                            endTimeString = timeString(new Date(endTime));
+                        },
+                        clear: () => {
+                            endTime = null;
+                            endTimeString = null;
+                        },
+                        isRunning,
+                        hasEnded: () => endTime && endTime < Date.now(),
+                        endTimeString: () => (isRunning() ? endTimeString : ""),
+                    };
+                })();
+                const uiUpdate = () => {
+                    clock.innerText = timeString();
+                    countdown.innerText = timing.endTimeString();
+                    document.body.classList[
+                        timing.hasEnded() ? "add" : "remove"
+                    ]("ended");
+                    document.body.classList[
+                        timing.isRunning() ? "add" : "remove"
+                    ]("running");
                 };
-            })();
-            const uiUpdate = () => {
-                clock.innerText = timeString();
-                countdown.innerText = timing.endTimeString();
-                document.body.classList[timing.hasEnded() ? "add" : "remove"](
-                    "ended",
-                );
-                document.body.classList[timing.isRunning() ? "add" : "remove"](
-                    "running",
-                );
-            };
-            uiUpdate();
-            window.setInterval(uiUpdate, 50);
+                uiUpdate();
+                window.setInterval(uiUpdate, 50);
 
-            document.getElementById("do-25").addEventListener("click", () => {
-                timing.setMinutesFromNow(5 / 60);
-                uiUpdate();
-            });
-            document.getElementById("content").addEventListener("click", () => {
-                timing.clear();
-                uiUpdate();
-            });
+                document
+                    .getElementById("do-25")
+                    .addEventListener("click", () => {
+                        timing.setMinutesFromNow(5 / 60);
+                        uiUpdate();
+                    });
+                document
+                    .getElementById("content")
+                    .addEventListener("click", () => {
+                        timing.clear();
+                        uiUpdate();
+                    });
+            };
+            addEventListener("DOMContentLoaded", run);
         </script>
     </body>
 </html>
