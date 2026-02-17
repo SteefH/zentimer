@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <style type="text/css">
+            :root {
+                --bg-color: #000;
+                --fg-color: #444;
+            }
+            html {
+                position: relative;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                color: var(--fg-color);
+                background-color: var(--bg-color);
+                margin: 0;
+                padding: 0;
+                font-family:
+                    "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+                transition-property: background-color color;
+                transition-duration: 0.35s;
+                transition-timing-function: ease-in-out;
+            }
+            .ended {
+                --bg-color: #444;
+                --fg-color: #000;
+            }
+            #container {
+                height: 100%;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+            }
+            #content {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                text-align: center;
+                align-content: center;
+            }
+            #clock {
+                height: 88vh;
+                font-size: min(70vh, 30vw);
+                line-height: 88vh;
+            }
+            #countdown {
+                flex-grow: 0;
+                height: 12vh;
+                /*font-size: min(8vh, 5vw);
+                line-height: 12vh;*/
+                display: none;
+                width: 100%;
+                font-size: 6vh;
+                line-height: 12vh;
+                text-align: center;
+            }
+            #controls {
+                height: 12vh;
+                display: flex;
+                flex-direction: row;
+                justify-content: space-around;
+                align-items: center;
+            }
+            .running #controls {
+                display: none;
+            }
+            .running #countdown {
+                display: block;
+            }
+            .control {
+                display: inline-block;
+                padding: 0 2vh;
+                font-size: 6vh;
+                line-height: 8vh;
+                box-sizing: border-box;
+                position: relative;
+            }
+            .control::before {
+                content: "";
+                display: block;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                border: 1px solid var(--fg-color);
+                border-radius: 8px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div id="content">
+                <span id="clock"></span>
+            </div>
+            <span id="countdown"></span>
+            <div id="controls">
+                <span id="do-25" class="control">25 min</span>
+            </div>
+        </div>
+
+        <script src="./script/no-sleep.js"></script>
+        <script>
+            const { default: NoSleepApp } = NoSleepApp;
+            const noSleep = new NoSleepApp();
+            noSleep.enable();
+            const clock = document.getElementById("clock");
+            const countdown = document.getElementById("countdown");
+            const timeString = (d) =>
+                (d || new Date()).toLocaleTimeString("nl-NL", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                });
+            const timing = (() => {
+                let endTime = null;
+                let endTimeString = null;
+                const isRunning = () => endTime && endTime > Date.now();
+                return {
+                    setMinutesFromNow: (count) => {
+                        endTime = Date.now() + count * 60000;
+                        endTimeString = timeString(new Date(endTime));
+                    },
+                    clear: () => {
+                        endTime = null;
+                        endTimeString = null;
+                    },
+                    isRunning,
+                    hasEnded: () => endTime && endTime < Date.now(),
+                    endTimeString: () => (isRunning() ? endTimeString : ""),
+                };
+            })();
+            const uiUpdate = () => {
+                clock.innerText = timeString();
+                countdown.innerText = timing.endTimeString();
+                document.body.classList[timing.hasEnded() ? "add" : "remove"](
+                    "ended",
+                );
+                document.body.classList[timing.isRunning() ? "add" : "remove"](
+                    "running",
+                );
+            };
+            uiUpdate();
+            window.setInterval(uiUpdate, 50);
+
+            document.getElementById("do-25").addEventListener("click", () => {
+                timing.setMinutesFromNow(5 / 60);
+                uiUpdate();
+            });
+            document.getElementById("content").addEventListener("click", () => {
+                timing.clear();
+                uiUpdate();
+            });
+        </script>
+    </body>
+</html>
