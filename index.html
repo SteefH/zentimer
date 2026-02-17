@@ -1,3 +1,4 @@
+<!doctype html>
 <html>
     <head>
         <title>Zen Timer</title>
@@ -24,7 +25,17 @@
                 margin: 0;
                 padding: 0;
                 font-family:
-                    "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+                    system-ui,
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    "Segoe UI",
+                    Roboto,
+                    Oxygen,
+                    Ubuntu,
+                    Cantarell,
+                    "Open Sans",
+                    "Helvetica Neue",
+                    sans-serif;
                 transition-property: background-color color;
                 transition-duration: 0.35s;
                 transition-timing-function: ease-in-out;
@@ -54,13 +65,35 @@
             #countdown {
                 flex-grow: 0;
                 height: 12vh;
-                /*font-size: min(8vh, 5vw);
-                line-height: 12vh;*/
                 display: none;
-                width: 100%;
+                box-sizing: border-box;
+                padding: 0 3vh;
                 font-size: 6vh;
                 line-height: 12vh;
-                text-align: center;
+                text-align: left;
+                position: relative;
+            }
+            #countdown-bar {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                height: 3px;
+                background-color: var(--fg-color);
+            }
+            #remaining-minutes {
+                position: absolute;
+                padding: 0 3vh;
+                /*left: 0;*/
+                right: 0;
+                /*top: 100%;*/
+
+                font-size: 4vh;
+            }
+            #remaining-minutes::before {
+                content: "nog ";
+            }
+            #remaining-minutes::after {
+                content: " minuten";
             }
             #controls {
                 height: 12vh;
@@ -101,7 +134,11 @@
             <div id="content">
                 <span id="clock"></span>
             </div>
-            <span id="countdown"></span>
+            <span id="countdown">
+                <span id="countdown-text"></span>
+                <span id="countdown-bar"></span>
+                <span id="remaining-minutes"></span>
+            </span>
             <div id="controls">
                 <span id="do-25" class="control">25 min</span>
             </div>
@@ -124,38 +161,70 @@
 
                 const clock = document.getElementById("clock");
                 const countdown = document.getElementById("countdown");
+                const countdownBar = document.getElementById("countdown-bar");
+                const countdownText = document.getElementById("countdown-text");
+                const remainingMinutes =
+                    document.getElementById("remaining-minutes");
                 const timeString = (d) =>
                     (d || new Date()).toLocaleTimeString("nl-NL", {
                         hour: "2-digit",
                         minute: "2-digit",
                     });
                 const timing = (() => {
+                    const MINUTE = 60000;
+                    let startTime = null;
+                    let startTimeString = null;
                     let endTime = null;
                     let endTimeString = null;
                     const isRunning = () => endTime && endTime > Date.now();
-                    return {
+                    const self = {
                         setMinutesFromNow: (count) => {
-                            endTime = Date.now() + count * 60000;
+                            startTime = Date.now();
+                            endTime = startTime + count * MINUTE;
                             endTimeString = timeString(new Date(endTime));
+                            startTimeString = timeString(new Date(startTime));
+                        },
+                        remainingMinutes: () => {
+                            if (endTime) {
+                                return Math.max(
+                                    Math.ceil((endTime - Date.now()) / MINUTE),
+                                    0,
+                                );
+                            }
                         },
                         clear: () => {
                             endTime = null;
                             endTimeString = null;
                         },
                         isRunning,
+
                         hasEnded: () => endTime && endTime < Date.now(),
-                        endTimeString: () => (isRunning() ? endTimeString : ""),
+                        endTimeString: () =>
+                            isRunning()
+                                ? startTimeString + " &rarr; " + endTimeString
+                                : "",
+                        percentDone: () =>
+                            Math.min(
+                                ((Date.now() - startTime) /
+                                    (endTime - startTime)) *
+                                    100,
+                                100,
+                            ),
                     };
+                    return self;
                 })();
                 const uiUpdate = () => {
                     clock.innerText = timeString();
-                    countdown.innerText = timing.endTimeString();
                     document.body.classList[
                         timing.hasEnded() ? "add" : "remove"
                     ]("ended");
                     document.body.classList[
                         timing.isRunning() ? "add" : "remove"
                     ]("running");
+                    if (timing.isRunning()) {
+                        countdownBar.style.width = timing.percentDone() + "%";
+                        remainingMinutes.innerText = timing.remainingMinutes();
+                    }
                 };
                 uiUpdate();
                 window.setInterval(uiUpdate, 50);
@@ -164,6 +233,7 @@
                     .getElementById("do-25")
                     .addEventListener("click", () => {
                         timing.setMinutesFromNow(25);
+                        countdownText.innerHTML = timing.endTimeString();
                         uiUpdate();
                     });
                 document
