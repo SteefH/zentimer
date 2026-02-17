@@ -145,20 +145,7 @@
         </div>
 
         <script>
-            const run = () => {
-                let wakeLock = null;
-                wakeLock = navigator.wakeLock.request("screen");
-                document.addEventListener("visibilitychange", () => {
-                    if (
-                        wakeLock !== null &&
-                        document.visibilityState === "visible"
-                    ) {
-                        navigator.wakeLock
-                            .request("screen")
-                            .then((wl) => (wakeLock = wl));
-                    }
-                });
-
+            const run = async () => {
                 const clock = document.getElementById("clock");
                 const countdown = document.getElementById("countdown");
                 const countdownBar = document.getElementById("countdown-bar");
@@ -242,6 +229,38 @@
                         timing.clear();
                         uiUpdate();
                     });
+
+                function toggleWakeLock() {
+                    if (!navigator.wakeLock) {
+                        alert(
+                            "Your device does not support the Wake Lock API. Try on an Android phone or on a device running iOS 16.4 or higher!",
+                        );
+                    } else if (
+                        window.currentWakeLock &&
+                        !window.currentWakeLock.released
+                    ) {
+                        releaseScreen();
+                    } else {
+                        lockScreen();
+                    }
+                }
+
+                async function lockScreen() {
+                    try {
+                        window.currentWakeLock =
+                            await navigator.wakeLock.request();
+                    } catch (err) {}
+                }
+
+                async function releaseScreen() {
+                    window.currentWakeLock.release();
+                }
+
+                document.addEventListener("visibilitychange", async () => {
+                    await lockScreen();
+                });
+
+                await lockScreen();
             };
             addEventListener("DOMContentLoaded", run);
         </script>
