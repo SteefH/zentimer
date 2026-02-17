@@ -102,7 +102,7 @@
         <script src="./script/no-sleep.js"></script>
         <script>
             const run = () => {
-                const { default: NoSleepApp } = NoSleepApp;
+                const { default: NoSleepApp } = window.NoSleepApp;
                 const noSleep = new NoSleepApp();
                 noSleep.enable();
                 const clock = document.getElementById("clock");
@@ -146,7 +146,7 @@
                 document
                     .getElementById("do-25")
                     .addEventListener("click", () => {
-                        timing.setMinutesFromNow(5 / 60);
+                        timing.setMinutesFromNow(25);
                         uiUpdate();
                     });
                 document
