@@ -189,7 +189,17 @@
             </div>
             <div id="cover"></div>
         </div>
-
+        <script>
+            if ("serviceWorker" in navigator) {
+                navigator.serviceWorker
+                    .register("./sw.js", { scope: "./" })
+                    .then((reg) => {
+                        console.log(
+                            "Registration succeeded. Scope is " + reg.scope,
+                        );
+                    });
+            }
+        </script>
         <script>
             const run = async () => {
                 const clock = document.getElementById("clock");
