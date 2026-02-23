@@ -293,11 +293,13 @@
                     });
 
                 async function lockScreen() {
-                    try {
-                        window.currentWakeLock =
-                            await navigator.wakeLock.request();
-                    } catch (err) {
-                        alert(err);
+                    if (document.body.classList.contains("no-cover")) {
+                        try {
+                            window.currentWakeLock =
+                                await navigator.wakeLock.request();
+                        } catch (err) {
+                            alert(err);
+                        }
                     }
                 }
 
@@ -313,8 +315,8 @@
                 document
                     .getElementById("cover")
                     .addEventListener("click", async () => {
-                        await lockScreen();
                         document.body.classList.add("no-cover");
+                        await lockScreen();
                     });
             };
             addEventListener("DOMContentLoaded", run);
