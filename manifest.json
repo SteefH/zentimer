@@ -4,6 +4,7 @@
   "orientation": "portrait-primary",
   "start_url": "https://zentimer.steeffie.net",
   "scope": "https://zentimer.steeffie.net",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "apple-touch-icon.png",
