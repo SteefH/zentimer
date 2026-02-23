@@ -1,5 +1,14 @@
 {
   "name": "Zen Timer",
-  "scope": "/",
-  "display": "standalone"
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "start_url": "https://zentimer.steeffie.net",
+  "scope": "https://zentimer.steeffie.net",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    }
+  ]
 }
