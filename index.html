@@ -105,10 +105,12 @@
                 display: none;
             }
             #controls {
-                height: 12vh;
+                height: 36vh;
                 display: flex;
-                flex-direction: row;
+                flex-direction: column;
+
                 justify-content: space-around;
+                align-content: space-between;
                 align-items: center;
             }
             .running #controls {
@@ -182,7 +184,8 @@
                 <span id="remaining-minutes"></span>
             </span>
             <div id="controls">
-                <span id="do-25" class="control">25:00</span>
+                <span id="do-25" class="control">&darr;25:00</span>
+                <span id="until-2143" class="control">&rarr;21:43</span>
             </div>
             <div id="cover"></div>
         </div>
@@ -221,6 +224,23 @@
                         setMinutesFromNow: (count) => {
                             startTime = Date.now();
                             endTime = startTime + count * MINUTE;
+                            endTimeString = timeString(new Date(endTime));
+                            startTimeString = timeString(new Date(startTime));
+                        },
+                        setEndTime: (hours, minutes) => {
+                            startTime = Date.now();
+                            endTime = new Date(startTime);
+                            endTime.setHours(hours);
+                            endTime.setMinutes(minutes);
+                            endTime.setSeconds(0);
+                            endTime.setMilliseconds(0);
+
+                            const moveToNextDay = startTime > endTime.getTime();
+                            if (moveToNextDay) {
+                                endTime.setTime(
+                                    endTime.getTime() + 24 * 60 * MINUTE,
+                                );
+                            }
                             endTimeString = timeString(new Date(endTime));
                             startTimeString = timeString(new Date(startTime));
                         },
@@ -276,15 +296,20 @@
                 };
                 uiUpdate();
                 window.setInterval(uiUpdate, 50);
+                const startWith = (id, fn) => {
+                    document
+                        .getElementById(id)
+                        .addEventListener("click", async () => {
+                            fn();
+                            countdownText.innerHTML = timing.endTimeString();
+                            uiUpdate();
+                            await lockScreen();
+                        });
+                };
 
-                document
-                    .getElementById("do-25")
-                    .addEventListener("click", async () => {
-                        timing.setMinutesFromNow(25);
-                        countdownText.innerHTML = timing.endTimeString();
-                        uiUpdate();
-                        await lockScreen();
-                    });
+                startWith("do-25", () => timing.setMinutesFromNow(25));
+                startWith("until-2143", () => timing.setEndTime(21, 43));
+
                 document
                     .getElementById("content")
                     .addEventListener("click", () => {
